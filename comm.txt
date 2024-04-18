@@ -1,0 +1,5 @@
+go mod init github.com/kurk4m/Store_P2P
+
+go get github.com/stretchr/testify 
+
+go mod init
