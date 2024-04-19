@@ -1,13 +1,30 @@
 package p2p
 
 import (
+	"fmt"
 	"net"
 	"sync"
 )
 
+type TCPPeer struct {
+	conn net.Conn
+	//if we dial thats outbound => true
+	//if we accept thats inbound => false
+	outbound bool
+}
+
+func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
+	return &TCPPeer{
+		conn:     conn,
+		outbound: outbound,
+	}
+}
+
 type TCPTransport struct {
 	listenAddress string
 	listener      net.Listener
+	handshakeFunc HandshakeFunc
+	decoder       Decoder
 
 	//mutex protect a peer?
 	mu    sync.RWMutex
@@ -16,6 +33,54 @@ type TCPTransport struct {
 
 func NewTCPTransport(listenAddr string) *TCPTransport {
 	return &TCPTransport{
+		handshakeFunc: NOPHandshakeFunc,
 		listenAddress: listenAddr,
 	}
+}
+
+func (t *TCPTransport) ListenAndAccept() error {
+	var err error
+
+	t.listener, err = net.Listen("tcp", t.listenAddress)
+
+	if err != nil {
+		return err
+	}
+
+	go t.startAcceptLoop()
+
+	return nil
+}
+
+func (t *TCPTransport) startAcceptLoop() {
+	for {
+		conn, err := t.listener.Accept()
+		if err != nil {
+			fmt.Printf("TCP accept error: %s\n", err)
+		}
+
+		fmt.Printf("new incoming connection %+v\n", conn)
+
+		go t.handleConn(conn)
+	}
+}
+
+type Temp struct{}
+
+func (t *TCPTransport) handleConn(conn net.Conn) {
+	peer := NewTCPPeer(conn, true)
+
+	if err := t.shakeHands(peer); err != nil {
+
+	}
+
+	msg := &Temp{}
+
+	for {
+		if err := t.decoder.Decode(conn, msg); err != nil {
+			fmt.Printf("TCP error: %s\n", err)
+			continue
+		}
+	}
+
 }
