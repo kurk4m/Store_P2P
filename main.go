@@ -7,11 +7,18 @@ import (
 	"github.com/kurk4m/Store_P2P/p2p"
 )
 
+func OnPeer(peer p2p.Peer) error {
+	peer.Close()
+	fmt.Println("doing some logic with the peer outside")
+	return nil
+}
+
 func main() {
 	tcpOpts := p2p.TCPTransportOpts{
 		ListenAddr:    ":3000",
 		HandshakeFunc: p2p.NOPHandshakeFunc,
 		Decoder:       p2p.DefaultDecoder{},
+		OnPeer:        OnPeer,
 	}
 	tr := p2p.NewTCPTransport(tcpOpts)
 
